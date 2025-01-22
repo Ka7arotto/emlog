@@ -1,6 +1,4 @@
-Here's the translation of your text to English while keeping the markdown format unchanged:
 
----
 
 ## Emlogpro 2.5.3 Arbitrary File Deletion Vulnerability
 
