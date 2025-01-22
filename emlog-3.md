@@ -115,5 +115,5 @@ By accessing the `plugins` directory, we can successfully execute the PHP code c
 /content/plugins/shell/shell.php
 ```
 
-![png](./public/3-2.png)
+![png](./public/3-3.png)
 

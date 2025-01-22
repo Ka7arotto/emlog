@@ -241,7 +241,11 @@ Content-Disposition: form-data; name="template"
 -----------------------------26132868467189384564220341836--
 
 ```
-抓包调试，成功匹配到`secret.txt`进行unlink
+
+Captured the network traffic, successfully matched `secret.txt` and performed the unlink operation:
+
 ![png](./public/2-2.png)
-最后成功删除`secret.txt`
+
+Finally, successfully deleted `secret.txt`:
+
 ![png](./public/2-3.png)
