@@ -82,11 +82,11 @@ http://localhost/content/uploadfile/../../config.php
 ### Attacking the Server
 
 First, create a `file.txt` in the app directory of the container (which will be deleted later using the vulnerability).
-![png](./1.png)
+![png](./public/1.png)
 
 Log in as an administrator.
 Click on Appearance -> Template -> Click on the Header Settings of the Default Template -> Upload any image.
-![png](./2.png)
+![png](./public/2.png)
 
 Intercept the request using Burp Suite and change the `origin_image` to the exploit URL:
 ```r
@@ -129,9 +129,9 @@ http://124.220.37.173:8000/content/uploadfile/../../file.txt
 ```
 
 Screenshot:
-![png](./3.png)
+![png](./public/3.png)
 
 After executing the request, we see that the file was successfully deleted:
-![png](./4.png)
+![png](./public/4.png)
 
 ---
