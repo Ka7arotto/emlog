@@ -19,6 +19,7 @@ When the administrator logs in to the backend and clicks on the comment manageme
 ```
 http://localhost/admin/comment.php
 ```
+
 ![](./pubic-xss/3.png)
 
 The vulnerability exists because in `admin/views/comment.php`, the article title is directly inserted into the HTML page without any filtering.
