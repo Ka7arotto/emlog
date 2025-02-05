@@ -13,13 +13,13 @@ Then we go to the homepage and click on the newly published article.
 ![](./pubic-xss/2.png)
 
 Next, we comment on the article, and the comment record will appear in the backend.
-![](./pubic-xss/3.png)
+![](./pubic-xss/4.png)
 
 When the administrator logs in to the backend and clicks on the comment management functionality, the XSS vulnerability is triggered:
 ```
 http://localhost/admin/comment.php
 ```
-![](./pubic-xss/4.png)
+![](./pubic-xss/3.png)
 
 The vulnerability exists because in `admin/views/comment.php`, the article title is directly inserted into the HTML page without any filtering.
 ![](./pubic-xss/5.png)
