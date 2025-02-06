@@ -22,5 +22,13 @@ http://localhost/admin/comment.php
 
 ![](./pubic-xss/3.png)
 
-The vulnerability exists because in `admin/views/comment.php`, the article title is directly inserted into the HTML page without any filtering.
+###  Debugging analysis
+Debugging found that the vulnerability was caused by the vulnerability file include/model/comment_model.php, and the getCommentsForAdmin function did not perform any filtering on the title taken out of the database.
+
+![](./pubic-xss/6.png)
+
+And admin/comment.php directly calls the getCommentsForAdmin function to retrieve data from the database. The file contains the rendering admin/views/comment.php html template.
+![](./pubic-xss/7.png)
+
+In admin/views/comment.php, the article title is directly inserted into the html page.
 ![](./pubic-xss/5.png)
