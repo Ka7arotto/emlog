@@ -1,6 +1,6 @@
 ### Vulnerability Description  
 
-EmlogPro latest version 2.5.4 has a stored XSS vulnerability in its page rendering functionality. These vulnerabilities occur due to insufficient input validation and sanitization, allowing attackers to inject malicious scripts into the database. When clicking on the article category page, the malicious code is automatically inserted and triggers the XSS vulnerability.
+There are stored XSS vulnerabilities in the page rendering function of the latest version of EmlogPro 2.5.4. These vulnerabilities occur due to insufficient input validation and sanitization, allowing attackers to inject malicious scripts into the database, and then when the page function is clicked, malicious code will be automatically inserted into the page to trigger the XSS vulnerability.
 
 Official website: [https://www.emlog.net/](https://www.emlog.net/)  
 Source code repository: [https://www.emlog.net/download](https://www.emlog.net/download)  
@@ -25,7 +25,7 @@ Then open the newly created page
 Successfully triggers the XSS vulnerability. The URL is: `localhost/?post=2` where the `post` parameter is the page's ID  
 ![](./pubic-xss/3-4.png)
 
-## Debugging Analysis
+### Debugging Analysis
 
 The new page URL: `localhost/?post=2` directly fetches the page content (`log_content`) from the database without any checks during rendering  
 ![](./pubic-xss/3-5.png)
