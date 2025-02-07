@@ -2,6 +2,12 @@
 
 EmlogPro version 2.5.4 has a stored XSS vulnerability in the article category feature. These vulnerabilities occur due to insufficient input validation and sanitization, allowing an attacker to inject malicious scripts into the database through a normal user account. When the backend administrator enters the comment management page, the malicious code is automatically inserted into the page, triggering the XSS vulnerability.
 
+Official website: [https://www.emlog.net/](https://www.emlog.net/)  
+Source code repository: [https://www.emlog.net/download](https://www.emlog.net/download)  
+Source code version and download link:  
+EmlogPro 2.5.4 - (2025-01-25 latest version)
+
+![](./public/a.png)
 ### Attack Process
 
 In the backend, we go to the article category section and insert the following payload in the title:
