@@ -31,7 +31,7 @@ The new page URL: `localhost/?post=2` directly fetches the page content (`log_co
 ![](./pubic-xss/3-5.png)
 
 Eventually, it reaches the file inclusion template in `include/controller/log_controller.php` and loads the `content/templates/default/page.php` file  
-![](./pubic-xss/3-6.png)
+![](./pubic-xss/3-7.png)
 
 In `content/templates/default/page.php`, the page content is directly output without filtering  
-![](./pubic-xss/3-7.png)
+![](./pubic-xss/3-6.png)
