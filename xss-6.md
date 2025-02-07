@@ -2,6 +2,11 @@
 
 EmlogPro latest version 2.5.4 has a stored XSS vulnerability in its link rendering functionality. These vulnerabilities occur due to insufficient input validation and sanitization, allowing attackers to inject malicious scripts into the database. When clicking on the link functionality, the malicious code is automatically inserted into the page and triggers the XSS vulnerability.
 
+
+Official website: [https://www.emlog.net/](https://www.emlog.net/)  
+Source code repository: [https://www.emlog.net/download](https://www.emlog.net/download)  
+Source code version and download link:  
+EmlogPro 2.5.4 - (2025-01-25 latest version)
 ### Attack Example  
 The URL requires an HTTP link, and we bypass the input by using the comment symbol to write the PoC:  
 ```r
